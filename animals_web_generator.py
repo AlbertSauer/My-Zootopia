@@ -1,46 +1,34 @@
 import json
 
-def load_data(file_path):
-    """Load JSON file safely"""
-    with open(file_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+# 1. Read the animal data from the JSON file
+with open('animals_data.json', 'r', encoding='utf-8') as file:
+    data = json.load(file)
 
+# 2. Generate one big string with all the animals' information
+output = ''                             # start with empty string
+for animal in data:
+    name = animal['name']
+    diet = animal['characteristics'].get('diet', 'Unknown')
+    location = animal['locations'][0]   # first location only
+    animal_type = animal.get('type', 'Unknown')
 
-# Main script
-file_path = "animals_data.json"
+    output += f"Name: {name}\n"
+    output += f"Diet: {diet}\n"
+    output += f"Location: {location}\n"
+    output += f"Type: {animal_type}\n"
+    output += "\n"                      # blank line between animals
+# ← Add this line to see the generated string
+print(output)
+# 3. Read the HTML template
+with open('animals_template.html', 'r', encoding='utf-8') as file:
+    template = file.read()
 
-try:
-    animals = load_data(file_path)
+# 4. Replace the placeholder with our generated text
+final_html = template.replace('__REPLACE_ANIMALS_INFO__', output)
 
-    for animal in animals:
-        # --- Required fields ---
-        name = animal.get("name")
+# 5. Write the result to animals.html
+with open('animals.html', 'w', encoding='utf-8') as file:
+    file.write(final_html)
 
-        # Diet is inside characteristics
-        diet = animal.get("characteristics", {}).get("diet")
-
-        # Locations is a top-level list
-        locations = animal.get("locations")
-        first_location = locations[0] if locations and len(locations) > 0 else None
-
-        # Type is inside characteristics (note: sometimes lowercase 'mammal')
-        animal_type = animal.get("characteristics", {}).get("type")
-
-        # --- Print only existing fields ---
-        if name:
-            print(f"Name: {name}")
-        if diet:
-            print(f"Diet: {diet}")
-        if first_location:
-            print(f"Location: {first_location}")
-        if animal_type:
-            print(f"Type: {animal_type}")
-
-        print()  # blank line between animals
-
-except FileNotFoundError:
-    print(f"Error: '{file_path}' not found!")
-except json.JSONDecodeError as e:
-    print(f"Error: Invalid JSON → {e}")
-except Exception as e:
-    print(f"Unexpected error: {e}")
+print("animals.html has been created successfully!")
+print("Right-click → Preview Static (or open in browser) to see it.")
