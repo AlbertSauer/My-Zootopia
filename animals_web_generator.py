@@ -1,14 +1,35 @@
 import json
+import requests
 
-# 1. Load the animal data
-with open('animals_data.json', 'r', encoding='utf-8') as f:
-    data = json.load(f)
+# API Configuration
+API_URL = 'https://api.api-ninjas.com/v1/animals'
+API_KEY = 'NkGoA6SmFd8K9/R8j0Vo4g==2tS6KSZmV9oiagM5'  # API KEY!!
+SEARCH_TERM = 'fox'
 
-# 2. Generate beautiful HTML cards
+
+# 1. Fetch animal data from API
+def fetch_animals():
+    headers = {'X-Api-Key': API_KEY}
+    params = {'name': SEARCH_TERM}
+
+    try:
+        response = requests.get(API_URL, headers=headers, params=params)
+        response.raise_for_status()  # Raises error for bad status
+        data = response.json()
+        print(f"Fetched {len(data)} fox-related animals from API.")
+        return data
+    except requests.exceptions.RequestException as e:
+        print(f"API error: {e}")
+        return []
+
+
+data = fetch_animals()
+
+# 2. Generate HTML cards
 output = ''
 
 for animal in data:
-    # --- Safely extract data (some animals miss fields) ---
+    # --- Safely extract data (API structure matches closely) ---
     name = animal.get('name', 'Unknown Animal')
 
     chars = animal.get('characteristics', {})
@@ -19,14 +40,14 @@ for animal in data:
     if animal.get('locations') and len(animal['locations']) > 0:
         location = animal['locations'][0]
 
-    # Type: prefer 'type', fallback to 'class' or other fields
+    # Type: prefer 'class' from characteristics
     animal_type = 'Unknown'
-    if chars.get('type'):
-        animal_type = chars['type']
-    elif chars.get('class'):
+    if chars.get('class'):
         animal_type = chars['class']
+    elif animal.get('taxonomy', {}).get('class'):
+        animal_type = animal['taxonomy']['class']
 
-    # --- Build the professional card ---
+    # --- Build the card ---
     output += '<li class="cards__item">\n'
     output += f'  <div class="card__title">{name}</div>\n'
     output += '  <p class="card__text">\n'
@@ -40,10 +61,10 @@ for animal in data:
 with open('animals_template.html', 'r', encoding='utf-8') as f:
     template = f.read()
 
-# 4. Inject our beautiful cards
+# 4. Inject our cards
 final_html = template.replace('__REPLACE_ANIMALS_INFO__', output)
 
-# 5. Save the final masterpiece
+# 5. Save
 with open('animals.html', 'w', encoding='utf-8') as f:
     f.write(final_html)
 
